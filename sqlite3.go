@@ -178,6 +178,33 @@ func (d *SQLiteDriver) Open(dsn string) (driver.Conn, error) {
 	return &SQLiteConn{db}, nil
 }
 
+// sqlite3_key
+func (c *SQLiteConn) Key(pKey string, nKey int) error {
+	_pKey := unsafe.Pointer(C.CString(pKey))
+	defer C.free(_pKey)
+	rv := C.sqlite3_key(c.db, _pKey, C.int(nKey))
+	if rv != C.SQLITE_OK {
+		return errors.New("error open db with key")
+	}
+	return nil
+}
+
+/*
+** Change the key on an open database.  If the current database is not
+** encrypted, this routine will encrypt it.  If pNew==0 or nNew==0, the
+** database is decrypted.
+** must use after Key()
+ */
+func (c *SQLiteConn) ReKey(pKey string, nKey int) error {
+	_pKey := unsafe.Pointer(C.CString(pKey))
+	defer C.free(_pKey)
+	rv := C.sqlite3_rekey(c.db, _pKey, C.int(nKey))
+	if rv != C.SQLITE_OK {
+		return errors.New("error rekey db")
+	}
+	return nil
+}
+
 // Close the connection.
 func (c *SQLiteConn) Close() error {
 	s := C.sqlite3_next_stmt(c.db, nil)
