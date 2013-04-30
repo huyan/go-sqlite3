@@ -154,9 +154,19 @@ func (d *SQLiteDriver) Open(dsn string) (driver.Conn, error) {
 	if C.sqlite3_threadsafe() == 0 {
 		return nil, errors.New("sqlite library was not compiled for thread-safe operation")
 	}
+	//encrypt dsn type "file.db@123456"
+	isp := strings.Index(dsn, "@")
+	var fileName string
+	var pKey string
+	if isp > 0 {
+		fileName = dsn[:isp]
+		pKey = dsn[isp+1:]
+	} else {
+		fileName = dsn
+	}
 
 	var db *C.sqlite3
-	name := C.CString(dsn)
+	name := C.CString(fileName)
 	defer C.free(unsafe.Pointer(name))
 	rv := C._sqlite3_open_v2(name, &db,
 		C.SQLITE_OPEN_FULLMUTEX|
@@ -174,15 +184,21 @@ func (d *SQLiteDriver) Open(dsn string) (driver.Conn, error) {
 	if rv != C.SQLITE_OK {
 		return nil, errors.New(C.GoString(C.sqlite3_errmsg(db)))
 	}
+	//encrypt db
+	key(db, pKey)
 
 	return &SQLiteConn{db}, nil
 }
 
 // sqlite3_key
-func (c *SQLiteConn) Key(pKey string, nKey int) error {
+func key(db *C.sqlite3, pKey string) error {
+	if len(pKey) == 0 {
+		return nil
+	}
+	nKey := len(pKey)
 	_pKey := unsafe.Pointer(C.CString(pKey))
 	defer C.free(_pKey)
-	rv := C.sqlite3_key(c.db, _pKey, C.int(nKey))
+	rv := C.sqlite3_key(db, _pKey, C.int(nKey))
 	if rv != C.SQLITE_OK {
 		return errors.New("error open db with key")
 	}
@@ -195,15 +211,15 @@ func (c *SQLiteConn) Key(pKey string, nKey int) error {
 ** database is decrypted.
 ** must use after Key()
  */
-func (c *SQLiteConn) ReKey(pKey string, nKey int) error {
-	_pKey := unsafe.Pointer(C.CString(pKey))
-	defer C.free(_pKey)
-	rv := C.sqlite3_rekey(c.db, _pKey, C.int(nKey))
-	if rv != C.SQLITE_OK {
-		return errors.New("error rekey db")
-	}
-	return nil
-}
+//func reKey(pKey string, nKey int) error {
+//	_pKey := unsafe.Pointer(C.CString(pKey))
+//	defer C.free(_pKey)
+//	rv := C.sqlite3_rekey(c.db, _pKey, C.int(nKey))
+//	if rv != C.SQLITE_OK {
+//		return errors.New("error rekey db")
+//	}
+//	return nil
+//}
 
 // Close the connection.
 func (c *SQLiteConn) Close() error {

@@ -4,53 +4,24 @@ go-sqlite3
 DESCRIPTION
 -----------
 
-sqlite3 driver conforming to the built-in database/sql interface
+根据 [https://github.com/mattn/go-sqlite3](https://github.com/mattn/go-sqlite3)做的扩展加密sqlite3,只在windows下测试
 
 INSTALLATION
 ------------
-
-It requires `pkg-config`.  You can also confirm that permissions and dependancies are setup by running `pkg-config --cflags --libs sqlite3`.
-
-If you are using [Homebrew](http://mxcl.github.com/homebrew/) on Mac OS X, you can install with:
-
-    brew install pkgconfig
-    brew install sqlite3
-     
-If you are using Ubuntu, you can install with:
-
-    sudo apt-get install pkg-config
-	sudo apt-get install sqlite3  
-	sudo apt-get install libsqlite3-dev 
 	
-If you are using Windows, you can get pkg-config from below.
+	1. 需要minGw类似编译环境，貌似不要原作者说的pkg-config
+	2. go get github.com/huyan/go-sqlite3
 
-http://ftp.gnome.org/pub/gnome/binaries/win32/dependencies/
-
-Go does not support static linking for external C library; sqlite3 should be built as a shared library. If it runs on Windows, it needs dll.
-
-Finally, this package can be installed with the go get command:
-
-    go get github.com/mattn/go-sqlite3
+记录
+---
+1. 加密部分实现，采用的wxSqlite3代码 [http://sourceforge.net/projects/wxcode/files/Components/](http://sourceforge.net/projects/wxcode/files/Components/)
+2. 只实现了加密接口，采用重新定义Open函数中dns参数的形式，格式`file.db@123456`，带@符号表示加密打开，新创建的db文件，会进行加密
+3. 加密后的db文件管理，可采用其它可视化管理工具，用wxSqlite3/sqlite3/中已编译好的加密解密dll替换工具的原sqlite3.dll，即可使用工具解密
+4. 默认实现的`CODEC_TYPE_AES128`加密方式，如果采用`CODEC_TYPE_AES256`加密，还需要把sha2.c、sha2.h库加到code_c目录下
+5. 再记录，没接触过c,c++，对编译一概不懂，花了二天时间才搞顺，一顺就觉得原来纠结的太可笑，没什么好写的了
 
 FAQ
 ---
-
-* Can't build go-sqlite3 on windows 64bit.
-
-    > Probably, you are using go 1.0, go1.0 have a problem to compile/link on windows 64bit. 
-    > See: https://github.com/mattn/go-sqlite3/issues/27
-
-* Getting insert error while query is opened.
-
-    > You can pass some arguments into the connection string like URI.
-    > See: https://github.com/mattn/go-sqlite3/issues/39
-
-* Can't build go-sqlite3. I got error of pkg-config.
-
-    > Probably, you don't set PKG_CONFIG_PATH environment variable.
-    > Add PKG_CONFIG_PATH=/path/to/pkgconfig into your bashrc (something for
-	> your shell), Or do `export PKG_CONFIG_PATH=/path/to/pkgconfig` in bash.
-    > See: https://github.com/mattn/go-sqlite3/issues/45
 
 LICENSE
 -------
